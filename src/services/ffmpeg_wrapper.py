@@ -8,25 +8,33 @@ class FFmpegWrapper:
     """FFmpegを実行するためのラッパークラス"""
     
     def __init__(self):
+        print("デバッグ: FFmpegWrapperの初期化開始")
         self.ffmpeg_path = config.get_ffmpeg_path()
+        print(f"デバッグ: FFmpegのパス: {self.ffmpeg_path}")
         self._verify_ffmpeg()
     
     def _verify_ffmpeg(self) -> None:
         """FFmpegが利用可能か確認"""
+        print(f"デバッグ: FFmpegの検証開始")
         if not os.path.exists(self.ffmpeg_path):
+            print(f"エラー: FFmpegが見つかりません: {self.ffmpeg_path}")
             logger.error(f"FFmpegが見つかりません: {self.ffmpeg_path}")
             raise FileNotFoundError(f"FFmpegが見つかりません: {self.ffmpeg_path}")
         
         try:
+            print("デバッグ: FFmpegバージョンの確認を実行")
             result = subprocess.run(
                 [self.ffmpeg_path, "-version"],
                 capture_output=True,
                 text=True
             )
             if result.returncode != 0:
+                print(f"エラー: FFmpegの実行に失敗: {result.stderr}")
                 raise RuntimeError("FFmpegの実行に失敗しました")
+            print("デバッグ: FFmpegの検証が完了")
             logger.info("FFmpegの検証が完了しました")
         except Exception as e:
+            print(f"エラー: FFmpegの検証中にエラー発生: {str(e)}")
             logger.error(f"FFmpegの検証中にエラーが発生しました: {str(e)}")
             raise
     

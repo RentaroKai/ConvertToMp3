@@ -33,21 +33,60 @@ class DragDropFrame(ttk.Frame):
     
     def _on_drop(self, event) -> None:
         """ファイルがドロップされた時の処理"""
-        # ドロップされたファイルのパスを取得
-        file_paths = event.data.split()
-        # Windowsのパス形式を修正（{}を削除）
-        file_paths = [path.strip('{}') for path in file_paths]
-        # コールバックを呼び出し
-        self.on_files_dropped(file_paths)
-        # 見た目を元に戻す
-        self.drop_label.configure(background="")
+        print("\nデバッグ: ファイルがドロップされました")
+        print(f"デバッグ: 生のイベントデータ: {event.data}")
+        
+        try:
+            # ドロップされたファイルのパスを取得
+            # 波括弧で囲まれたパス全体を取得
+            file_paths = []
+            current_path = ""
+            in_braces = False
+            
+            for char in event.data:
+                if char == '{':
+                    in_braces = True
+                elif char == '}':
+                    in_braces = False
+                    if current_path:
+                        file_paths.append(current_path)
+                        current_path = ""
+                elif in_braces:
+                    current_path += char
+                elif char.isspace() and not in_braces:
+                    if current_path:
+                        file_paths.append(current_path)
+                        current_path = ""
+                else:
+                    current_path += char
+            
+            if current_path:  # 最後のパスを追加
+                file_paths.append(current_path)
+            
+            print(f"デバッグ: パース後のパス: {file_paths}")
+            
+            # パスの正規化
+            file_paths = [os.path.normpath(path) for path in file_paths]
+            print(f"デバッグ: 正規化後のパス: {file_paths}")
+            
+            # コールバックを呼び出し
+            self.on_files_dropped(file_paths)
+            
+        except Exception as e:
+            print(f"エラー: ドロップ処理中にエラーが発生: {str(e)}")
+            raise
+        finally:
+            # 見た目を元に戻す
+            self.drop_label.configure(background="")
     
     def _on_drag_enter(self, event) -> None:
         """ドラッグが領域に入った時の処理"""
+        print("デバッグ: ドラッグが領域に入りました")
         self.drop_label.configure(background="lightblue")
     
     def _on_drag_leave(self, event) -> None:
         """ドラッグが領域から出た時の処理"""
+        print("デバッグ: ドラッグが領域から出ました")
         self.drop_label.configure(background="")
 
 class FileListFrame(ttk.Frame):

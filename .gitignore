@@ -6,3 +6,5 @@
 __pycache__
 APP_Manager.json
 src/logs/*
+test_file_path.py
+tests
