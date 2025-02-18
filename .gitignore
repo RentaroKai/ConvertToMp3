@@ -1,0 +1,8 @@
+/build
+/config
+/dist
+/logs
+/設計.md
+__pycache__
+APP_Manager.json
+src/logs/*
