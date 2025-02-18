@@ -11,9 +11,9 @@ class ConfigLoader:
             "path": "resources/ffmpeg/ffmpeg.exe",
             "default_format": "mp3",
             "mp3": {
-                "bitrate": "192k",
+                "bitrate": "96k",
                 "sample_rate": "44100",
-                "channels": "2"
+                "channels": "1"
             },
             "wav": {
                 "sample_rate": "44100",
