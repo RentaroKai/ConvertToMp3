@@ -8,3 +8,6 @@ APP_Manager.json
 src/logs/*
 test_file_path.py
 tests
+sample
+仕様.md
+main.spec

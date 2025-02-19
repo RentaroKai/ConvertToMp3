@@ -1,14 +1,28 @@
 import json
 import os
+import sys
 from typing import Dict, Any
 from .logger import logger
 
 class ConfigLoader:
     """設定ファイルを読み込むクラス"""
     
+    def _get_base_path(self) -> str:
+        """実行ファイルのベースパスを取得"""
+        if getattr(sys, 'frozen', False):
+            # PyInstallerで実行されている場合
+            return os.path.dirname(sys.executable)
+        else:
+            # 通常のPythonで実行されている場合
+            return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    def _normalize_path(self, path: str) -> str:
+        """パスを正規化する"""
+        return os.path.normpath(path.replace('/', os.sep))
+    
     DEFAULT_CONFIG = {
         "ffmpeg": {
-            "path": "resources/ffmpeg/ffmpeg.exe",
+            "path": "ffmpeg.exe",  # FFmpegは同じディレクトリに配置
             "default_format": "mp3",
             "mp3": {
                 "bitrate": "96k",
@@ -29,7 +43,9 @@ class ConfigLoader:
     
     def __init__(self, config_path: str = "config/config.json"):
         print("デバッグ: ConfigLoaderの初期化開始")
-        self.config_path = config_path
+        self.base_path = self._get_base_path()
+        print(f"デバッグ: ベースパス: {self.base_path}")
+        self.config_path = os.path.normpath(os.path.join(self.base_path, self._normalize_path(config_path)))
         print(f"デバッグ: 設定ファイルのパス: {self.config_path}")
         self.config: Dict[str, Any] = {}
         self.load_config()
@@ -42,8 +58,14 @@ class ConfigLoader:
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             print(f"デバッグ: 設定ディレクトリを作成: {os.path.dirname(self.config_path)}")
             
+            # FFmpegのパスを絶対パスに変換
+            config = self.DEFAULT_CONFIG.copy()
+            ffmpeg_path = os.path.normpath(os.path.join(self.base_path, self.DEFAULT_CONFIG["ffmpeg"]["path"]))
+            config["ffmpeg"]["path"] = ffmpeg_path
+            print(f"デバッグ: FFmpegパスを設定: {ffmpeg_path}")
+            
             with open(self.config_path, 'w', encoding='utf-8') as f:
-                json.dump(self.DEFAULT_CONFIG, f, indent=4, ensure_ascii=False)
+                json.dump(config, f, indent=4, ensure_ascii=False)
             print(f"デバッグ: デフォルト設定ファイルを作成完了: {self.config_path}")
             logger.info(f"デフォルトの設定ファイルを作成しました: {self.config_path}")
             
@@ -63,6 +85,12 @@ class ConfigLoader:
             
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 self.config = json.load(f)
+                # FFmpegのパスが相対パスの場合は絶対パスに変換
+                ffmpeg_path = self.config.get("ffmpeg", {}).get("path", "")
+                if not os.path.isabs(ffmpeg_path):
+                    ffmpeg_path = os.path.normpath(os.path.join(self.base_path, self._normalize_path(ffmpeg_path)))
+                    self.config["ffmpeg"]["path"] = ffmpeg_path
+                    print(f"デバッグ: FFmpegパスを絶対パスに変換: {ffmpeg_path}")
                 print("デバッグ: 設定ファイルの読み込みが完了")
                 logger.info("設定ファイルを読み込みました")
         
@@ -78,7 +106,8 @@ class ConfigLoader:
     
     def get_ffmpeg_path(self) -> str:
         """FFmpegのパスを取得"""
-        return self.config.get("ffmpeg", {}).get("path", "")
+        path = self.config.get("ffmpeg", {}).get("path", "")
+        return os.path.normpath(path)
     
     def get_default_format(self) -> str:
         """デフォルトの出力フォーマットを取得"""
