@@ -54,6 +54,16 @@ class FFmpegWrapper:
             base_path = os.path.splitext(input_path)[0]
             output_path = f"{base_path}_converted.{output_format}"
 
+        # 入力ファイルと出力ファイルが同じ場合（上書きモード）、一時ファイルを使用
+        temp_output_path = None
+        if os.path.normpath(input_path) == os.path.normpath(output_path):
+            base, ext = os.path.splitext(output_path)
+            temp_output_path = f"{base}_tmp{ext}"
+            actual_output_path = temp_output_path
+            print(f"デバッグ: 上書きモードのため一時ファイルを使用: {temp_output_path}")
+        else:
+            actual_output_path = output_path
+
         # フォーマット設定を取得
         format_settings = config.get_format_settings(output_format)
 
@@ -89,7 +99,7 @@ class FFmpegWrapper:
                 "-ac", format_settings.get("channels", "2")
             ])
 
-        command.append(output_path)
+        command.append(actual_output_path)
 
         logger.info(f"変換を開始: {input_path} -> {output_path}")
         print(f"デバッグ: 実行するコマンド: {' '.join(command)}")
@@ -104,10 +114,24 @@ class FFmpegWrapper:
                 logger.error(f"変換中にエラーが発生しました: {result.stderr}")
                 raise RuntimeError(f"変換中にエラーが発生しました: {result.stderr}")
 
+            # 一時ファイルを使用した場合、元ファイルを置き換え
+            if temp_output_path:
+                print(f"デバッグ: 一時ファイルを元ファイルに置き換え: {temp_output_path} -> {output_path}")
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                os.rename(temp_output_path, output_path)
+
             logger.info(f"変換が完了しました: {output_path}")
             return output_path
 
         except Exception as e:
+            # エラー時に一時ファイルをクリーンアップ
+            if temp_output_path and os.path.exists(temp_output_path):
+                try:
+                    os.remove(temp_output_path)
+                    print(f"デバッグ: 一時ファイルを削除しました: {temp_output_path}")
+                except:
+                    pass
             logger.error(f"変換中にエラーが発生しました: {str(e)}")
             raise
 
@@ -127,6 +151,16 @@ class FFmpegWrapper:
         if output_path is None:
             base_path = os.path.splitext(input_path)[0]
             output_path = f"{base_path}_converted.{output_format}"
+
+        # 入力ファイルと出力ファイルが同じ場合（上書きモード）、一時ファイルを使用
+        temp_output_path = None
+        if os.path.normpath(input_path) == os.path.normpath(output_path):
+            base, ext = os.path.splitext(output_path)
+            temp_output_path = f"{base}_tmp{ext}"
+            actual_output_path = temp_output_path
+            print(f"デバッグ: 上書きモードのため一時ファイルを使用: {temp_output_path}")
+        else:
+            actual_output_path = output_path
 
         # フォーマット設定を取得
         format_settings = config.get_format_settings(output_format)
@@ -161,6 +195,24 @@ class FFmpegWrapper:
                     "-vf", "scale=-2:720"  # 720pにリサイズ
                 ])
                 print("デバッグ: めちゃ圧縮設定を適用")
+            elif quality_preset == "ultra_compression":  # 鬼圧縮
+                command.extend([
+                    "-crf", "35",        # 超高圧縮（品質は大幅に下がる）
+                    "-preset", "veryslow", # 最高圧縮効率
+                    "-b:v", "200k",      # 超低動画ビットレート
+                    "-b:a", "32k",       # 超低音声ビットレート
+                    "-vf", "scale=-2:480"  # 480pにリサイズ（さらに小さく）
+                ])
+                print("デバッグ: 鬼圧縮設定を適用")
+            elif quality_preset == "hell_compression":  # 地獄圧縮
+                command.extend([
+                    "-crf", "40",        # 地獄レベルの圧縮（品質は激しく劣化）
+                    "-preset", "veryslow", # 最高圧縮効率
+                    "-b:v", "100k",      # 激低動画ビットレート
+                    "-b:a", "24k",       # 激低音声ビットレート
+                    "-vf", "scale=-2:360"  # 360pにリサイズ（激小）
+                ])
+                print("デバッグ: 地獄圧縮設定を適用（覚悟してください）")
             elif quality_preset == "medium_compression":  # まあまあ圧縮
                 command.extend([
                     "-crf", "23",        # 中程度の圧縮
@@ -177,7 +229,7 @@ class FFmpegWrapper:
                 ])
                 print("デバッグ: デフォルト設定を適用")
 
-        command.append(output_path)
+        command.append(actual_output_path)
 
         logger.info(f"動画変換を開始: {input_path} -> {output_path}")
         print(f"デバッグ: 実行するコマンド: {' '.join(command)}")
@@ -192,10 +244,24 @@ class FFmpegWrapper:
                 logger.error(f"動画変換中にエラーが発生しました: {result.stderr}")
                 raise RuntimeError(f"動画変換中にエラーが発生しました: {result.stderr}")
 
+            # 一時ファイルを使用した場合、元ファイルを置き換え
+            if temp_output_path:
+                print(f"デバッグ: 一時ファイルを元ファイルに置き換え: {temp_output_path} -> {output_path}")
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                os.rename(temp_output_path, output_path)
+
             logger.info(f"動画変換が完了しました: {output_path}")
             return output_path
 
         except Exception as e:
+            # エラー時に一時ファイルをクリーンアップ
+            if temp_output_path and os.path.exists(temp_output_path):
+                try:
+                    os.remove(temp_output_path)
+                    print(f"デバッグ: 一時ファイルを削除しました: {temp_output_path}")
+                except:
+                    pass
             logger.error(f"動画変換中にエラーが発生しました: {str(e)}")
             raise
 

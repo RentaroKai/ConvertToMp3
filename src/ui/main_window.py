@@ -51,7 +51,8 @@ class MainWindow(TkinterDnD.Tk):
             formats=self.controller.get_supported_formats(),
             default_format=self.controller.get_default_format(),
             on_format_change=self._on_format_changed,
-            on_quality_change=self._on_quality_changed
+            on_quality_change=self._on_quality_changed,
+            on_overwrite_change=self._on_overwrite_changed
         )
         self.format_selector.pack(fill="x", pady=10)
 
@@ -95,6 +96,11 @@ class MainWindow(TkinterDnD.Tk):
         logger.info(f"MP4品質設定が変更されました: {quality_preset}")
         self.controller.set_quality_preset(quality_preset)
 
+    def _on_overwrite_changed(self, overwrite: bool) -> None:
+        """上書きモードが変更された時の処理"""
+        logger.info(f"上書きモードが変更されました: {'有効' if overwrite else '無効'}")
+        self.controller.set_overwrite_mode(overwrite)
+
     def _start_conversion(self) -> None:
         """変換を開始"""
         files = self.file_list.get_files()
@@ -108,6 +114,9 @@ class MainWindow(TkinterDnD.Tk):
         # 品質設定を更新
         if self.format_selector.get_format() == "mp4":
             self.controller.set_quality_preset(self.format_selector.get_quality_preset())
+
+        # 上書きモード設定を更新
+        self.controller.set_overwrite_mode(self.format_selector.get_overwrite_mode())
 
         # 変換処理を別スレッドで実行
         thread = threading.Thread(
@@ -176,7 +185,7 @@ class MainWindow(TkinterDnD.Tk):
         # フォーマット選択の状態を変更（再帰的に全ての子ウィジェットを処理）
         def update_widget_state(widget):
             try:
-                if isinstance(widget, (ttk.Radiobutton, ttk.Label)):
+                if isinstance(widget, (ttk.Radiobutton, ttk.Label, ttk.Checkbutton)):
                     widget.configure(state=state)
                 for child in widget.winfo_children():
                     update_widget_state(child)

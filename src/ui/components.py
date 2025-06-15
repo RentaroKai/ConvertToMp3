@@ -200,12 +200,14 @@ class FormatSelector(ttk.Frame):
         default_format: str,
         on_format_change: Callable[[str], None],
         on_quality_change: Optional[Callable[[str], None]] = None,
+        on_overwrite_change: Optional[Callable[[bool], None]] = None,
         *args,
         **kwargs
     ):
         super().__init__(master, *args, **kwargs)
         self.on_format_change = on_format_change
         self.on_quality_change = on_quality_change
+        self.on_overwrite_change = on_overwrite_change
 
         # フォーマット選択のラジオボタン
         self.format_var = tk.StringVar(value=default_format)
@@ -239,7 +241,9 @@ class FormatSelector(ttk.Frame):
 
         quality_options = [
             ("まあまあ圧縮", "medium_compression"),
-            ("めちゃ圧縮", "high_compression")
+            ("めちゃ圧縮", "high_compression"),
+            ("鬼圧縮（激小）", "ultra_compression"),
+            ("地獄圧縮（極小）", "hell_compression")
         ]
 
         for text, value in quality_options:
@@ -252,8 +256,32 @@ class FormatSelector(ttk.Frame):
             )
             rb.pack(side="left", padx=5)
 
+        # 上書きモード設定フレーム
+        overwrite_frame = ttk.Frame(self)
+        overwrite_frame.pack(fill="x", pady=5)
+
+        # 上書きモードチェックボックス
+        self.overwrite_var = tk.BooleanVar(value=False)  # デフォルトはOFF（安全モード）
+        
+        self.overwrite_checkbox = ttk.Checkbutton(
+            overwrite_frame,
+            text="上書きモード（元のファイルと同じ名前で保存）",
+            variable=self.overwrite_var,
+            command=self._on_overwrite_changed
+        )
+        self.overwrite_checkbox.pack(side="left", padx=5)
+
+        # 警告ラベル
+        self.warning_label = ttk.Label(
+            overwrite_frame,
+            text="⚠️ 注意：元のファイルが上書きされます",
+            foreground="red"
+        )
+        
         # 初期状態でMP4品質設定を隠す
         self._update_quality_visibility()
+        # 初期状態で警告ラベルを隠す
+        self._update_warning_visibility()
 
     def get_format(self) -> str:
         """選択されているフォーマットを取得"""
@@ -262,6 +290,10 @@ class FormatSelector(ttk.Frame):
     def get_quality_preset(self) -> str:
         """選択されている品質設定を取得"""
         return self.quality_var.get()
+
+    def get_overwrite_mode(self) -> bool:
+        """上書きモードの状態を取得"""
+        return self.overwrite_var.get()
 
     def _on_format_changed(self) -> None:
         """フォーマットが変更された時の処理"""
@@ -273,12 +305,25 @@ class FormatSelector(ttk.Frame):
         if self.on_quality_change:
             self.on_quality_change(self.quality_var.get())
 
+    def _on_overwrite_changed(self) -> None:
+        """上書きモードが変更された時の処理"""
+        self._update_warning_visibility()
+        if self.on_overwrite_change:
+            self.on_overwrite_change(self.overwrite_var.get())
+
     def _update_quality_visibility(self) -> None:
         """MP4品質設定の表示/非表示を切り替え"""
         if self.format_var.get() == "mp4":
             self.quality_frame.pack(fill="x", pady=5)
         else:
             self.quality_frame.pack_forget()
+
+    def _update_warning_visibility(self) -> None:
+        """警告ラベルの表示/非表示を切り替え"""
+        if self.overwrite_var.get():
+            self.warning_label.pack(side="left", padx=10)
+        else:
+            self.warning_label.pack_forget()
 
 class ProgressFrame(ttk.Frame):
     """進捗表示フレーム"""

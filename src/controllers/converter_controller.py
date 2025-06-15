@@ -12,6 +12,7 @@ class ConverterController:
         self.file_handler = FileHandler()
         self.progress_callback: Optional[Callable[[str, float], None]] = None
         self.quality_preset = "normal"  # デフォルトの品質設定
+        self.overwrite_mode = False  # デフォルトは安全モード
 
     def set_progress_callback(self, callback: Callable[[str, float], None]) -> None:
         """進捗コールバックを設定"""
@@ -20,6 +21,10 @@ class ConverterController:
     def set_quality_preset(self, preset: str) -> None:
         """品質設定を設定"""
         self.quality_preset = preset
+
+    def set_overwrite_mode(self, overwrite_mode: bool) -> None:
+        """上書きモードを設定"""
+        self.overwrite_mode = overwrite_mode
 
     def convert_files(self, file_paths: List[str], output_format: str) -> List[Dict[str, str]]:
         """複数のファイルを変換"""
@@ -44,8 +49,8 @@ class ConverterController:
                     else:
                         self.progress_callback(f"動画ファイルから音声を抽出中 ({i}/{total_files}): {file_path}", progress)
 
-                # 出力パスを生成
-                output_path = self.file_handler.get_output_path(file_path, output_format)
+                # 出力パスを生成（上書きモード設定を使用）
+                output_path = self.file_handler.get_output_path(file_path, output_format, self.overwrite_mode)
 
                 # 変換を実行（動画変換 vs 音声変換）
                 if output_format == "mp4":

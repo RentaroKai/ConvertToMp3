@@ -60,21 +60,28 @@ class FileHandler:
         print(f"\nデバッグ: 検証完了 - 有効なファイル数: {len(valid_files)}")
         return valid_files
 
-    def get_output_path(self, input_path: str, output_format: str) -> str:
+    def get_output_path(self, input_path: str, output_format: str, overwrite_mode: bool = False) -> str:
         """出力ファイルパスを生成"""
         try:
-            print(f"デバッグ: 出力パスの生成開始 - 入力: {input_path}")
+            print(f"デバッグ: 出力パスの生成開始 - 入力: {input_path}, 上書きモード: {overwrite_mode}")
             directory = os.path.dirname(input_path)
             filename = os.path.splitext(os.path.basename(input_path))[0]
-            output_path = os.path.join(directory, f"{filename}_converted.{output_format}")
-            print(f"デバッグ: 生成された出力パス: {output_path}")
+            
+            if overwrite_mode:
+                # 上書きモード：元ファイルと同じ名前で出力
+                output_path = os.path.join(directory, f"{filename}.{output_format}")
+                print(f"デバッグ: 上書きモードで生成された出力パス: {output_path}")
+            else:
+                # 安全モード：_convertedを付けて別名保存
+                output_path = os.path.join(directory, f"{filename}_converted.{output_format}")
+                print(f"デバッグ: 安全モードで生成された出力パス: {output_path}")
 
-            # 同名ファイルが存在する場合、連番を付与
-            counter = 1
-            while os.path.exists(output_path):
-                print(f"デバッグ: 同名ファイルが存在するため連番を付与: {counter}")
-                output_path = os.path.join(directory, f"{filename}_converted_{counter}.{output_format}")
-                counter += 1
+                # 同名ファイルが存在する場合、連番を付与
+                counter = 1
+                while os.path.exists(output_path):
+                    print(f"デバッグ: 同名ファイルが存在するため連番を付与: {counter}")
+                    output_path = os.path.join(directory, f"{filename}_converted_{counter}.{output_format}")
+                    counter += 1
 
             return output_path
 
